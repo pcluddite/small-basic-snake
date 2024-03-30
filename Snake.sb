@@ -1,0 +1,168 @@
+gw = 700
+gh = 500
+
+GraphicsWindow.Hide()
+GraphicsWindow.Title = "Snake"
+
+GraphicsWindow.Height = gh
+GraphicsWindow.Width = gw
+
+GraphicsWindow.CanResize = "false"
+GraphicsWindow.Left = (Desktop.Width - gw)/2
+GraphicsWindow.Top = (Desktop.Height - gh)/2
+GraphicsWindow.BackgroundColor = "Black"
+
+GraphicsWindow.KeyDown = OnKeyDown
+
+GraphicsWindow.BrushColor = "White"
+scoreBox = Shapes.AddText("Score: 0")
+Shapes.Move(scoreBox, 4, 4)
+
+GraphicsWindow.BrushColor = "Blue"
+
+GraphicsWindow.Show()
+
+START:
+
+FoodX = 0
+FoodY = 0
+FoodVisible = "False"
+Timer.Interval = 5000
+Timer.Tick = CreateFood
+Timer.Resume()
+
+xmove = 20
+ymove = 0
+Xpos = 0
+Ypos = 0
+len = 3
+For i = len To 0 Step -1
+  Xpos[i] = Xpos[i + 1] + xmove
+  Ypos[i] = Ypos[i + 1] + ymove
+  GraphicsWindow.FillRectangle(Xpos[i], Ypos[i], 20, 20)
+EndFor
+
+notChanged = "True"
+changingDirection = "False"
+
+While "True"
+  
+  If notChanged Then
+    GraphicsWindow.BrushColor = "Black"
+    GraphicsWindow.FillRectangle(Xpos[len], Ypos[len], 20, 20)
+  Else
+    notChanged = "True"
+  EndIf
+  
+  x = Xpos[0] + xmove
+  y = Ypos[0] + ymove
+  
+  For i = len To 0 Step -1
+    Xpos[i] = Xpos[i - 1]
+    Ypos[i] = Ypos[i - 1]
+    If Xpos[i] = x And Ypos[i] = y Then
+      Dead()
+    Endif
+  EndFor
+  
+  If x = FoodX And y = FoodY Then
+    notChanged = "False"
+    len = len + 5
+    FoodVisible = "False"
+    Sound.PlayClick()
+    GraphicsWindow.BrushColor = "Black"
+    Shapes.SetText(scoreBox, "Score: " + (len - 3))
+  EndIf
+  
+  If FoodVisible Then
+    GraphicsWindow.BrushColor = "Red"
+    GraphicsWindow.FillRectangle(FoodX + 2, FoodY + 2, 18, 18)
+  EndIf
+  
+  Xpos[0] = x
+  Ypos[0] = y
+  
+  'UpdateTextWindow()
+  
+  CheckWallCollision()
+  
+  GraphicsWindow.BrushColor = "Blue"
+  GraphicsWindow.FillRectangle(Xpos[0] + 2, Ypos[0] + 2, 18, 18)
+  
+  Program.Delay(70)
+EndWhile
+
+Sub OnKeyDown
+  If changingDirection = "False" Then
+    key = GraphicsWindow.LastKey
+    If key = "Left" And xmove <> 20 Then
+      xmove = -20
+      ymove = 0
+      changingDirection = "True"
+    EndIf
+    If key = "Right" And xmove <> -20 Then
+      xmove = 20
+      ymove = 0
+      changingDirection = "True"
+    EndIf
+    If key = "Up" And ymove <> 20 Then
+      ymove = -20
+      xmove = 0
+      changingDirection = "True"
+    EndIf
+    If key = "Down" And ymove <> -20 Then
+      ymove = 20
+      xmove = 0
+      changingDirection = "True"
+    EndIf
+  EndIf
+EndSub
+
+Sub CheckWallCollision
+  If Xpos[0] < 0 Or Xpos[0] >= gw Then
+    Dead()
+  EndIf
+  If Ypos[0] < 0 Or Ypos[0] >= gh Then
+    Dead()
+  EndIf
+EndSub
+
+Sub Dead
+  Sound.PlayBellRing()
+  GraphicsWindow.Clear()
+  GraphicsWindow.BackgroundColor = "White"
+  GraphicsWindow.BrushColor = "Red"
+  For i = 0 To len
+    If (Xpos[i] = 0 And Ypos[i] = 0) = "False" Then
+      GraphicsWindow.FillRectangle(Xpos[i] + 2, Ypos[i] + 2, 18, 18)
+    EndIf
+  EndFor
+  If FoodVisible Then
+    GraphicsWindow.BrushColor = "Blue"
+    GraphicsWindow.FillRectangle(FoodX + 2, FoodY + 2, 18, 18)
+  EndIf
+  GraphicsWindow.BrushColor = "Black"
+  GraphicsWindow.DrawText(gw/2 - 55, gh/2 - 20, "Final Score:     " + (len - 3))
+  While "True"
+    Program.Delay(10)
+  EndWhile
+EndSub
+
+Sub CreateFood
+  If FoodVisible Then
+  Else
+    FoodX = (Math.GetRandomNumber(gw/20) - 1)*20
+    FoodY = (Math.GetRandomNumber(gh/20) - 1)*20
+    FoodVisible = "True"
+  EndIf
+EndSub
+
+Sub UpdateTextWindow
+  For i = len To 0 Step -1
+    TextWindow.CursorLeft = 10
+    TextWindow.CursorTop = i
+    TextWindow.Write(Xpos[i])
+    TextWindow.Write(",")
+    TextWindow.Write(Ypos[i])
+  EndFor
+EndSub
